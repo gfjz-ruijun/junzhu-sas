@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, users, subjects, examRecords } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -85,4 +85,100 @@ export async function getUser(id: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+// ===== Subject Queries =====
+export async function createSubject(userId: string, name: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const id = `subject_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  await db.insert(subjects).values({ id, userId, name });
+  return id;
+}
+
+export async function getUserSubjects(userId: string) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db.select().from(subjects).where(eq(subjects.userId, userId));
+}
+
+export async function deleteSubject(id: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(subjects).where(eq(subjects.id, id));
+}
+
+// ===== Exam Record Queries =====
+export async function createExamRecord(
+  subjectId: string,
+  examDate: string,
+  examType: "小测" | "周测" | "月考" | "期中考" | "期末考" | "模拟考" | "中考" | "高考" | "其他",
+  totalScore: number,
+  actualScore: number,
+  difficulty: "简单" | "中等" | "困难"
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const scoreRatio = (actualScore / totalScore).toFixed(4);
+  const id = `exam_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  
+  await db.insert(examRecords).values({
+    id,
+    subjectId,
+    examDate,
+    examType,
+    totalScore,
+    actualScore,
+    scoreRatio: scoreRatio as any,
+    difficulty,
+  });
+  
+  return id;
+}
+
+export async function getSubjectExamRecords(subjectId: string) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return db
+    .select()
+    .from(examRecords)
+    .where(eq(examRecords.subjectId, subjectId))
+    .orderBy(examRecords.examDate);
+}
+
+export async function deleteExamRecord(id: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(examRecords).where(eq(examRecords.id, id));
+}
+
+export async function updateExamRecord(
+  id: string,
+  examDate: string,
+  examType: "小测" | "周测" | "月考" | "期中考" | "期末考" | "模拟考" | "中考" | "高考" | "其他",
+  totalScore: number,
+  actualScore: number,
+  difficulty: "简单" | "中等" | "困难"
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const scoreRatio = (actualScore / totalScore).toFixed(4);
+  
+  await db
+    .update(examRecords)
+    .set({
+      examDate,
+      examType,
+      totalScore,
+      actualScore,
+      scoreRatio: scoreRatio as any,
+      difficulty,
+      updatedAt: new Date(),
+    })
+    .where(eq(examRecords.id, id));
+}

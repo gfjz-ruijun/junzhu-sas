@@ -1,4 +1,4 @@
-import { mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { mysqlEnum, mysqlTable, text, timestamp, varchar, int, decimal, boolean } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -18,4 +18,34 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// TODO: Add your tables here
+/**
+ * 学科表 - 存储用户的各个学科
+ */
+export const subjects = mysqlTable("subjects", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  userId: varchar("userId", { length: 64 }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(), // 学科名称，如"数学"、"英语"等
+  createdAt: timestamp("createdAt").defaultNow(),
+});
+
+export type Subject = typeof subjects.$inferSelect;
+export type InsertSubject = typeof subjects.$inferInsert;
+
+/**
+ * 考试成绩表 - 存储每次考试的详细信息
+ */
+export const examRecords = mysqlTable("examRecords", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  subjectId: varchar("subjectId", { length: 64 }).notNull(), // 关联学科
+  examDate: varchar("examDate", { length: 10 }).notNull(), // 考试日期，格式：YYYY-MM-DD
+  examType: mysqlEnum("examType", ["小测", "周测", "月考", "期中考", "期末考", "模拟考", "中考", "高考", "其他"]).notNull(), // 考试类型
+  totalScore: int("totalScore").notNull(), // 卷面总分
+  actualScore: int("actualScore").notNull(), // 实际得分
+  scoreRatio: decimal("scoreRatio", { precision: 5, scale: 4 }).notNull(), // 成绩比值（如0.9500表示95%）
+  difficulty: mysqlEnum("difficulty", ["简单", "中等", "困难"]).notNull(), // 难易程度
+  createdAt: timestamp("createdAt").defaultNow(),
+  updatedAt: timestamp("updatedAt").defaultNow(),
+});
+
+export type ExamRecord = typeof examRecords.$inferSelect;
+export type InsertExamRecord = typeof examRecords.$inferInsert;
