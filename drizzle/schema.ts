@@ -49,3 +49,18 @@ export const examRecords = mysqlTable("examRecords", {
 
 export type ExamRecord = typeof examRecords.$inferSelect;
 export type InsertExamRecord = typeof examRecords.$inferInsert;
+
+/**
+ * 考试排名表 - 存储每次考试的班级排名
+ */
+export const examRankings = mysqlTable("examRankings", {
+  id: varchar("id", { length: 64 }).primaryKey(),
+  examRecordId: varchar("examRecordId", { length: 64 }).notNull(), // 关联考试记录
+  ranking: int("ranking").notNull(), // 班级排名
+  totalStudents: int("totalStudents").notNull(), // 班级总人数
+  createdAt: timestamp("createdAt").defaultNow(),
+  updatedAt: timestamp("updatedAt").defaultNow(),
+});
+
+export type ExamRanking = typeof examRankings.$inferSelect;
+export type InsertExamRanking = typeof examRankings.$inferInsert;

@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, subjects, examRecords } from "../drizzle/schema";
+import { InsertUser, users, subjects, examRecords, examRankings } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -182,3 +182,72 @@ export async function updateExamRecord(
     })
     .where(eq(examRecords.id, id));
 }
+
+
+// ===== Exam Ranking Queries =====
+export async function createExamRanking(
+  examRecordId: string,
+  ranking: number,
+  totalStudents: number
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const id = `ranking_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  
+  await db.insert(examRankings).values({
+    id,
+    examRecordId,
+    ranking,
+    totalStudents,
+  });
+  
+  return id;
+}
+
+export async function getExamRanking(examRecordId: string) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db
+    .select()
+    .from(examRankings)
+    .where(eq(examRankings.examRecordId, examRecordId))
+    .limit(1);
+  
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function updateExamRanking(
+  examRecordId: string,
+  ranking: number,
+  totalStudents: number
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const existing = await getExamRanking(examRecordId);
+  
+  if (existing) {
+    await db
+      .update(examRankings)
+      .set({
+        ranking,
+        totalStudents,
+        updatedAt: new Date(),
+      })
+      .where(eq(examRankings.examRecordId, examRecordId));
+  } else {
+    await createExamRanking(examRecordId, ranking, totalStudents);
+  }
+}
+
+export async function deleteExamRanking(examRecordId: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db
+    .delete(examRankings)
+    .where(eq(examRankings.examRecordId, examRecordId));
+}
+

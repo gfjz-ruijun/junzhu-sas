@@ -64,47 +64,42 @@ export default function Home() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="text-center max-w-md">
-          {APP_LOGO && <img src={APP_LOGO} alt="logo" className="h-16 mx-auto mb-6" />}
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">{APP_TITLE}</h1>
-          <p className="text-xl text-gray-600 mb-8">个人学业分析系统</p>
-          <p className="text-gray-600 mb-8">
-            记录每次考试成绩，智能分析学业趋势，帮助你了解学习进度。
-          </p>
-          <a href={getLoginUrl()}>
-            <Button size="lg" className="w-full">
-              登录开始使用
-            </Button>
-          </a>
+        <div className="text-center">
+          {APP_LOGO && <img src={APP_LOGO} alt="logo" className="w-20 h-20 mx-auto mb-6" />}
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">{APP_TITLE}</h1>
+          <p className="text-gray-600 mb-8 text-lg">个人学业分析系统</p>
+          <Button size="lg" onClick={() => (window.location.href = getLoginUrl())}>
+            登录开始使用
+          </Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Header */}
-      <header className="bg-white shadow">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+    <div className="min-h-screen bg-gray-50">
+      {/* 头部 */}
+      <div className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {APP_LOGO && <img src={APP_LOGO} alt="logo" className="h-8" />}
+            {APP_LOGO && <img src={APP_LOGO} alt="logo" className="w-8 h-8" />}
             <h1 className="text-2xl font-bold text-gray-900">{APP_TITLE}</h1>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-gray-600">欢迎，{user?.name || "用户"}</span>
-            <Button variant="outline" onClick={() => logout()}>
+            <span className="text-sm text-gray-600">欢迎，{user?.name || "用户"}</span>
+            <Button variant="outline" size="sm" onClick={logout}>
               退出登录
             </Button>
           </div>
         </div>
-      </header>
+      </div>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      {/* 主内容 */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">我的学科</h2>
-            <p className="text-gray-600">选择一个学科查看成绩分析</p>
+            <h2 className="text-3xl font-bold text-gray-900">我的学科</h2>
+            <p className="text-gray-600 mt-1">选择一个学科查看成绩分析</p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
@@ -119,7 +114,7 @@ export default function Home() {
               </DialogHeader>
               <div className="space-y-4">
                 <Input
-                  placeholder="输入学科名称（如：数学、英语、物理等）"
+                  placeholder="输入学科名称（如：数学、英语）"
                   value={newSubjectName}
                   onChange={(e) => setNewSubjectName(e.target.value)}
                   onKeyPress={(e) => {
@@ -150,35 +145,10 @@ export default function Home() {
             <CardContent>
               <BookOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-600 mb-4">还没有添加任何学科</p>
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button>添加第一个学科</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>添加新学科</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <Input
-                      placeholder="输入学科名称（如：数学、英语、物理等）"
-                      value={newSubjectName}
-                      onChange={(e) => setNewSubjectName(e.target.value)}
-                      onKeyPress={(e) => {
-                        if (e.key === "Enter") {
-                          handleCreateSubject();
-                        }
-                      }}
-                    />
-                    <Button
-                      onClick={handleCreateSubject}
-                      disabled={!newSubjectName.trim() || createSubjectMutation.isPending}
-                      className="w-full"
-                    >
-                      {createSubjectMutation.isPending ? "创建中..." : "创建"}
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+              <Button onClick={() => setIsDialogOpen(true)} className="gap-2">
+                <Plus className="w-4 h-4" />
+                添加第一个学科
+              </Button>
             </CardContent>
           </Card>
         ) : (
@@ -186,7 +156,7 @@ export default function Home() {
             {subjects.map((subject) => (
               <Card
                 key={subject.id}
-                className="hover:shadow-lg transition-shadow cursor-pointer group"
+                className="hover:shadow-lg transition-all cursor-pointer group"
                 onClick={() => handleSubjectClick(subject.id)}
               >
                 <CardHeader>
@@ -203,6 +173,7 @@ export default function Home() {
                         handleDeleteSubject(subject.id);
                       }}
                       disabled={deleteSubjectMutation.isPending}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <Trash2 className="w-4 h-4 text-red-500" />
                     </Button>
@@ -217,14 +188,14 @@ export default function Home() {
             ))}
           </div>
         )}
-      </main>
+      </div>
 
-      {/* Footer */}
-      <footer className="bg-white border-t mt-12">
-        <div className="container mx-auto px-4 py-6 text-center text-gray-600">
+      {/* 底部 */}
+      <div className="border-t border-gray-200 bg-white mt-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center text-gray-600">
           <p>JunZhu-SAS © 2024 个人学业分析系统</p>
         </div>
-      </footer>
+      </div>
     </div>
   );
 }

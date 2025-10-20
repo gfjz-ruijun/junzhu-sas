@@ -11,6 +11,10 @@ import {
   getSubjectExamRecords,
   deleteExamRecord,
   updateExamRecord,
+  createExamRanking,
+  getExamRanking,
+  updateExamRanking,
+  deleteExamRanking,
 } from "./db";
 
 export const appRouter = router({
@@ -99,6 +103,34 @@ export const appRouter = router({
           input.difficulty
         )
       ),
+  }),
+
+  // 考试排名管理路由
+  examRankings: router({
+    // 获取某次考试的排名
+    get: protectedProcedure
+      .input(z.object({ examRecordId: z.string() }))
+      .query(({ input }) => getExamRanking(input.examRecordId)),
+    // 创建或更新排名
+    upsert: protectedProcedure
+      .input(
+        z.object({
+          examRecordId: z.string(),
+          ranking: z.number().positive("排名必须大于0"),
+          totalStudents: z.number().positive("班级总人数必须大于0"),
+        })
+      )
+      .mutation(({ input }) =>
+        updateExamRanking(
+          input.examRecordId,
+          input.ranking,
+          input.totalStudents
+        )
+      ),
+    // 删除排名
+    delete: protectedProcedure
+      .input(z.object({ examRecordId: z.string() }))
+      .mutation(({ input }) => deleteExamRanking(input.examRecordId)),
   }),
 });
 
