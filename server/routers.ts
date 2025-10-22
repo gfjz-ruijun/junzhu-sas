@@ -13,6 +13,7 @@ import {
   updateExamRecord,
   createExamRanking,
   getExamRanking,
+  getExamRankingsByIds,
   updateExamRanking,
   deleteExamRanking,
 } from "./db";
@@ -111,6 +112,10 @@ export const appRouter = router({
     get: protectedProcedure
       .input(z.object({ examRecordId: z.string() }))
       .query(({ input }) => getExamRanking(input.examRecordId)),
+    // 批量获取多个考试的排名
+    listByExams: protectedProcedure
+      .input(z.object({ examRecordIds: z.array(z.string()) }))
+      .query(({ input }) => getExamRankingsByIds(input.examRecordIds)),
     // 创建或更新排名
     upsert: protectedProcedure
       .input(

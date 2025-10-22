@@ -1,6 +1,7 @@
-import { eq } from "drizzle-orm";
+
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users, subjects, examRecords, examRankings } from "../drizzle/schema";
+import { eq, inArray } from "drizzle-orm";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -240,6 +241,20 @@ export async function updateExamRanking(
   } else {
     await createExamRanking(examRecordId, ranking, totalStudents);
   }
+}
+
+export async function getExamRankingsByIds(examRecordIds: string[]) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  if (examRecordIds.length === 0) return [];
+  
+  const result = await db
+    .select()
+    .from(examRankings)
+    .where(inArray(examRankings.examRecordId, examRecordIds));
+  
+  return result;
 }
 
 export async function deleteExamRanking(examRecordId: string) {

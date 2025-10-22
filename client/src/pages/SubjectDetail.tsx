@@ -40,24 +40,22 @@ export default function SubjectDetail({ params }: { params: { subjectId: string 
   // 获取排名数据
   const [rankingData, setRankingData] = useState<Record<string, any>>({});
 
-  // 获取排名数据 - 为每个考试记录单独查询
-  const rankingQueries = examRecords.map((exam) =>
-    trpc.examRankings.get.useQuery(
-      { examRecordId: exam.id },
-      { enabled: isAuthenticated && !!exam.id }
-    )
+  // 获取所有排名数据 - 使用单个查询而不是多个Hook
+  const { data: allRankings = [] } = trpc.examRankings.listByExams.useQuery(
+    { examRecordIds: examRecords.map(e => e.id) },
+    { enabled: isAuthenticated && examRecords.length > 0 }
   );
 
+  // 当排名数据更新时，更新rankingData状态
   useEffect(() => {
-    const rankings: Record<string, any> = {};
-    examRecords.forEach((exam, index) => {
-      const query = rankingQueries[index];
-      if (query?.data) {
-        rankings[exam.id] = query.data;
-      }
-    });
-    setRankingData(rankings);
-  }, [rankingQueries]);
+    if (allRankings && allRankings.length > 0) {
+      const rankings: Record<string, any> = {};
+      allRankings.forEach((ranking: any) => {
+        rankings[ranking.examRecordId] = ranking;
+      });
+      setRankingData(rankings);
+    }
+  }, [allRankings])
 
   // 创建考试记录
   const createExamMutation = trpc.examRecords.create.useMutation({
