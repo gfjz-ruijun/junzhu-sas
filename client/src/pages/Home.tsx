@@ -69,7 +69,7 @@ export default function Home() {
           <h1 className="text-4xl font-bold text-gray-900 mb-2">{APP_TITLE}</h1>
           <p className="text-gray-600 mb-8 text-lg">个人学业分析系统</p>
           <Button size="lg" onClick={() => (window.location.href = getLoginUrl())}>
-            登录开始使用
+            使用GitHub登录
           </Button>
         </div>
       </div>

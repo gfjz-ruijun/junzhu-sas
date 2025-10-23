@@ -257,47 +257,31 @@ class SDKServer {
   }
 
   async authenticateRequest(req: Request): Promise<User> {
-    // Regular authentication flow
+    // GitHub authentication flow
     const cookies = this.parseCookies(req.headers.cookie);
     const sessionCookie = cookies.get(COOKIE_NAME);
-    const session = await this.verifySession(sessionCookie);
 
-    if (!session) {
-      throw ForbiddenError("Invalid session cookie");
+    if (!sessionCookie) {
+      throw ForbiddenError("No session cookie found");
     }
 
-    const sessionUserId = session.openId;
-    const signedInAt = new Date();
-    let user = await db.getUser(sessionUserId);
+    try {
+      // Verify JWT token from GitHub auth
+      const { payload } = await jwtVerify(sessionCookie, JWT_SECRET);
+      const userId = payload.userId as string;
 
-    // If user not in DB, sync from OAuth server automatically
-    if (!user) {
-      try {
-        const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
-        await db.upsertUser({
-          id: userInfo.openId,
-          name: userInfo.name || null,
-          email: userInfo.email ?? null,
-          loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
-          lastSignedIn: signedInAt,
-        });
-        user = await db.getUser(userInfo.openId);
-      } catch (error) {
-        console.error("[Auth] Failed to sync user from OAuth:", error);
-        throw ForbiddenError("Failed to sync user info");
+      let user = await db.getUser(userId);
+
+      if (!user) {
+        throw ForbiddenError("User not found");
       }
+
+      await db.updateUserLastSignedIn(userId);
+      return user;
+    } catch (error) {
+      console.error("[Auth] GitHub authentication failed:", error);
+      throw ForbiddenError("Authentication failed");
     }
-
-    if (!user) {
-      throw ForbiddenError("User not found");
-    }
-
-    await db.upsertUser({
-      id: user.id,
-      lastSignedIn: signedInAt,
-    });
-
-    return user;
   }
 }
 
