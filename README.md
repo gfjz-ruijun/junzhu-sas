@@ -28,49 +28,6 @@
 
 **页面进入动画**：所有页面和组件都配有流畅的淡入、滑动等动画效果，提升用户体验。
 
-## 快速开始
-
-### 系统要求
-
-- Node.js 18+
-- npm 或 pnpm
-- MySQL 5.7+ 或 TiDB
-
-### 安装步骤
-
-1. **克隆项目**
-   ```bash
-   git clone <repository-url>
-   cd junzhu-sas
-   ```
-
-2. **安装依赖**
-   ```bash
-   pnpm install
-   ```
-
-3. **配置环境变量**
-   
-   创建 `.env.local` 文件，配置以下变量：
-   ```
-   DATABASE_URL=mysql://user:password@localhost:3306/junzhu_sas
-   JWT_SECRET=your-secret-key
-   VITE_APP_ID=your-app-id
-   OAUTH_SERVER_URL=https://api.manus.im
-   VITE_OAUTH_PORTAL_URL=https://portal.manus.im
-   ```
-
-4. **初始化数据库**
-   ```bash
-   pnpm db:push
-   ```
-
-5. **启动开发服务器**
-   ```bash
-   pnpm dev
-   ```
-
-   访问 `http://localhost:3000` 查看应用。
 
 ## 使用指南
 
