@@ -84,11 +84,12 @@ const createOAuthHttpClient = (): AxiosInstance =>
 
 class SDKServer {
   private readonly client: AxiosInstance;
-  private readonly oauthService: OAuthService;
+  private readonly oauthService: OAuthService | null = null;
 
   constructor(client: AxiosInstance = createOAuthHttpClient()) {
     this.client = client;
-    this.oauthService = new OAuthService(this.client);
+    // OAuth is disabled - only local authentication is used
+    // this.oauthService = new OAuthService(this.client);
   }
 
   private deriveLoginMethod(
@@ -260,61 +261,28 @@ class SDKServer {
     const cookies = this.parseCookies(req.headers.cookie);
     const sessionCookie = cookies.get(COOKIE_NAME);
 
-    // Try local session first
-    if (sessionCookie) {
-      try {
-        const session = await db.getSessionByToken(sessionCookie);
-        if (session) {
-          const user = await db.getUser(session.userId);
-          if (user) {
-            await db.updateUserLastSignedIn(user.id);
-            return user;
-          }
-        }
-      } catch (error) {
-        console.log("[Auth] Local session check failed, trying OAuth");
+    if (!sessionCookie) {
+      throw ForbiddenError("No session cookie found");
+    }
+
+    // Only use local session authentication (no OAuth)
+    try {
+      const session = await db.getSessionByToken(sessionCookie);
+      if (!session) {
+        throw ForbiddenError("Invalid or expired session");
       }
-    }
 
-    // Fallback to OAuth
-    const session = await this.verifySession(sessionCookie);
-
-    if (!session) {
-      throw ForbiddenError("Invalid session cookie");
-    }
-
-    const sessionUserId = session.openId;
-    const signedInAt = new Date();
-    let user = await db.getUser(sessionUserId);
-
-    // If user not in DB, sync from OAuth server automatically
-    if (!user) {
-      try {
-        const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
-        await db.upsertUser({
-          id: userInfo.openId,
-          name: userInfo.name || null,
-          email: userInfo.email ?? null,
-          loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
-          lastSignedIn: signedInAt,
-        });
-        user = await db.getUser(userInfo.openId);
-      } catch (error) {
-        console.error("[Auth] Failed to sync user from OAuth:", error);
-        throw ForbiddenError("Failed to sync user info");
+      const user = await db.getUser(session.userId);
+      if (!user) {
+        throw ForbiddenError("User not found");
       }
+
+      await db.updateUserLastSignedIn(user.id);
+      return user;
+    } catch (error) {
+      console.error("[Auth] Local session authentication failed:", error);
+      throw ForbiddenError("Authentication failed");
     }
-
-    if (!user) {
-      throw ForbiddenError("User not found");
-    }
-
-    await db.upsertUser({
-      id: user.id,
-      lastSignedIn: signedInAt,
-    });
-
-    return user;
   }
 }
 
