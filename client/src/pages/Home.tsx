@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { APP_LOGO, APP_TITLE } from "@/const";
+import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { useState } from "react";
 import { useLocation } from "wouter";
@@ -68,7 +68,7 @@ export default function Home() {
           {APP_LOGO && <img src={APP_LOGO} alt="logo" className="w-20 h-20 mx-auto mb-6" />}
           <h1 className="text-4xl font-bold text-gray-900 mb-2">{APP_TITLE}</h1>
           <p className="text-gray-600 mb-8 text-lg">个人学业分析系统</p>
-          <Button size="lg" onClick={() => setLocation("/login")}>
+          <Button size="lg" onClick={() => (window.location.href = getLoginUrl())}>
             登录开始使用
           </Button>
         </div>
