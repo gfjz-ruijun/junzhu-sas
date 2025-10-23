@@ -1,6 +1,6 @@
 
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, subjects, examRecords, examRankings } from "../drizzle/schema";
+import { InsertUser, users, subjects, examRecords, examRankings, sessions } from "../drizzle/schema";
 import { eq, inArray } from "drizzle-orm";
 import { ENV } from './_core/env';
 
@@ -264,5 +264,103 @@ export async function deleteExamRanking(examRecordId: string) {
   await db
     .delete(examRankings)
     .where(eq(examRankings.examRecordId, examRecordId));
+}
+
+
+
+// ========== 本地认证函数 ==========
+
+export async function getUserByUsername(username: string) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db
+    .select()
+    .from(users)
+    .where(eq(users.username, username))
+    .limit(1);
+  
+  return result.length > 0 ? result[0] : null;
+}
+
+export async function createLocalUser(
+  id: string,
+  username: string,
+  passwordHash: string,
+  name: string | null,
+  email: string | null
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.insert(users).values({
+    id,
+    username,
+    passwordHash,
+    name,
+    email,
+    loginMethod: "local",
+    role: "user",
+  });
+}
+
+export async function updateUserLastSignedIn(userId: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db
+    .update(users)
+    .set({ lastSignedIn: new Date() })
+    .where(eq(users.id, userId));
+}
+
+export async function createSession(
+  userId: string,
+  token: string,
+  expiresInMs: number
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const expiresAt = new Date(Date.now() + expiresInMs);
+  
+  await db.insert(sessions).values({
+    id: sessionId,
+    userId,
+    token,
+    expiresAt,
+  });
+}
+
+export async function getSessionByToken(token: string) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db
+    .select()
+    .from(sessions)
+    .where(eq(sessions.token, token))
+    .limit(1);
+  
+  if (result.length === 0) return null;
+  
+  const session = result[0];
+  
+  // 检查会话是否过期
+  if (session.expiresAt < new Date()) {
+    return null;
+  }
+  
+  return session;
+}
+
+export async function deleteSession(token: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db
+    .delete(sessions)
+    .where(eq(sessions.token, token));
 }
 

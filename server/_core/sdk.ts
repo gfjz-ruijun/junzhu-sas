@@ -257,9 +257,26 @@ class SDKServer {
   }
 
   async authenticateRequest(req: Request): Promise<User> {
-    // Regular authentication flow
     const cookies = this.parseCookies(req.headers.cookie);
     const sessionCookie = cookies.get(COOKIE_NAME);
+
+    // Try local session first
+    if (sessionCookie) {
+      try {
+        const session = await db.getSessionByToken(sessionCookie);
+        if (session) {
+          const user = await db.getUser(session.userId);
+          if (user) {
+            await db.updateUserLastSignedIn(user.id);
+            return user;
+          }
+        }
+      } catch (error) {
+        console.log("[Auth] Local session check failed, trying OAuth");
+      }
+    }
+
+    // Fallback to OAuth
     const session = await this.verifySession(sessionCookie);
 
     if (!session) {
